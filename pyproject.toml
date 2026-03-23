@@ -1,0 +1,14 @@
+[project]
+name = "fp-qgpu"
+version = "0.1.0"
+description = "Repo zum fortgeschrittenen Praktrikum an der Universität Stuttgart zur Simulation von Quantenschaltungen auf GPUs"
+readme = "README.md"
+authors = [
+    { name = "Marco Gerhardt", email = "st172378@stud.uni-stuttgart.de" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11.0"]
+build-backend = "uv_build"
