@@ -16,7 +16,6 @@ def simulator_mock(qc: QuantumCircuit, shots: int = 1024, seed: int | None = Non
     simulator = AerSimulator(seed_simulator=seed)
 
     # Transpile
-    qc.measure_all()
     circ = transpile(qc, simulator)
 
     # Run
