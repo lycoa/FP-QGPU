@@ -4,6 +4,7 @@ from qiskit import transpile
 from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram
 import matplotlib.pyplot as plt
+from fp_qgpu.simulator_mock import simulator_mock
 
 
 def ghz(n):
@@ -80,4 +81,20 @@ def qft_superpos(n):
     return
 
 
-qft_superpos(4)
+def ghz_example(n=3):
+    qc = QuantumCircuit(n)
+    qc.h(0)
+    for i in range(n):
+        if i < n - 1:
+            qc.cx(i, i + 1)
+    qc.measure_all()
+    print(qc)
+    transpiled_qc = transpile(qc, basis_gates=["u", "cx"])
+    sim_result = simulator_mock(transpiled_qc)
+    print(sim_result)
+    fig, ax = plt.subplots()
+    plot_histogram(sim_result, ax=ax)
+    plt.show()
+
+
+ghz_example()
