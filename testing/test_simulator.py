@@ -16,6 +16,7 @@ def create_test_circuit(n=4):
 
 
 def test_simulator():
+    # Test with a simple circuit
     qc = create_test_circuit()
 
     # Mock simulator
@@ -29,10 +30,11 @@ def test_simulator():
     result = simulator.run(circ, shots=test_values["shots"]).result()
     result_Aer = result.get_counts(circ)
 
-    assert result_mock == result_Aer
+    assert result_mock[0] == result_Aer
 
 
 def test_random_circuit():
+    # Test with a random circuit
     n = 4
     depth = 10
     qc = random_circuit(n, depth, measure=True)
@@ -48,4 +50,27 @@ def test_random_circuit():
     result = simulator.run(circ, shots=test_values["shots"]).result()
     result_Aer = result.get_counts(circ)
 
-    assert result_mock == result_Aer
+    assert result_mock[0] == result_Aer
+
+
+def test_random_circuit_statevector():
+    # Test with a random circuit and compare statevectors
+    n = 4
+    depth = 10
+    qc = random_circuit(n, depth, measure=False)
+
+    # Mock simulator
+    test_values = {"qc": qc, "shots": 1024, "seed": 20}
+    result_mock = simulator_mock(**test_values)
+
+    # Aer simulator
+    qc_st = qc.copy()
+    qc_st.save_statevector()
+
+    simulator = AerSimulator(seed_simulator=test_values["seed"])
+    circ = transpile(qc_st, simulator)
+
+    result = simulator.run(circ, shots=test_values["shots"]).result()
+    state_vector_Aer = result.get_statevector(circ)
+
+    assert result_mock[1] == state_vector_Aer
