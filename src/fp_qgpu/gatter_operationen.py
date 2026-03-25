@@ -1,4 +1,6 @@
 import numpy as np
+from qiskit import QuantumCircuit
+from fp_qgpu.circuits import simple01
 
 
 def u_gate(number_of_qubits, acting_on, theta, alpha, lam):
@@ -65,3 +67,15 @@ def extract_gates(transpiled_qc):
         print(gate_list)
 
     return gate_list
+
+
+def get_circuit(qc: QuantumCircuit) -> None:
+    circuit = []
+    for gate in qc.data:
+        acting_on = [qc.find_bit(q) for q in gate.qubits]
+        circuit.append([gate.name, acting_on, gate.matrix])
+        # print('other paramters (such as angles):', gate[0].params)
+    return circuit  # containes information about each gate
+
+
+print(get_circuit(simple01()))
