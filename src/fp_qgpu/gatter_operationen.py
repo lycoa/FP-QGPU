@@ -1,5 +1,6 @@
 import numpy as np
-
+from qiskit import QuantumCircuit
+from fp_qgpu.circuits import simple00, simple01
 
 def u_gate(number_of_qubits, acting_on, theta, alpha, lam):
     num = number_of_qubits
@@ -58,3 +59,15 @@ def cx(number_of_qubits, control, target):
 
 
 cx(2, 0, 1)
+
+
+def get_circuit(qc:QuantumCircuit) -> None : 
+    circuit = []
+    for gate in qc.data: 
+        acting_on = [qc.find_bit(q) for q in gate.qubits]
+        circuit.append([gate.name, acting_on, gate.matrix])
+        # print('other paramters (such as angles):', gate[0].params)
+    return circuit #containes information about each gate 
+
+print(get_circuit(simple01()))
+
