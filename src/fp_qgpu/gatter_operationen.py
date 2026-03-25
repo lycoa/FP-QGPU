@@ -57,4 +57,11 @@ def cx(number_of_qubits, control, target):
     print(phi_vec)
 
 
-cx(2, 0, 1)
+def extract_gates(transpiled_qc):
+    gate_list = []
+
+    for gate in transpiled_qc.data:
+        gate_list.append(gate.name)
+        print(gate_list)
+
+    return gate_list
