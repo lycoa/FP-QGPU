@@ -7,7 +7,7 @@ from fp_qgpu.simulator import simulator_own
 import numpy as np
 
 
-def create_test_circuit(n=4):
+def create_test_circuit(n: int = 4) -> QuantumCircuit:
     qc = QuantumCircuit(n)
     qc.h(0)
     for i in range(n):

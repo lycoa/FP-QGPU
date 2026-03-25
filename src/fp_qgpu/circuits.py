@@ -25,7 +25,7 @@ def simple01() -> QuantumCircuit:
     return qc
 
 
-def ghz_test(n):
+def ghz_test(n: int) -> QuantumCircuit:
     qc = QuantumCircuit(n)
     qc.h(0)
     for i in range(n):
@@ -36,7 +36,7 @@ def ghz_test(n):
     return transpiled_qc
 
 
-def ghz(n):
+def ghz(n: int) -> QuantumCircuit:
     qc = QuantumCircuit(n)
     qc.h(0)
     for i in range(n):
@@ -61,7 +61,7 @@ def ghz(n):
     return transpiled_qc
 
 
-def qft():
+def qft() -> None:
     n = 4
     qc = QuantumCircuit(n)
     qc.z(0)
@@ -86,7 +86,7 @@ def qft():
     return
 
 
-def qft_superpos(n):
+def qft_superpos(n: int) -> None:
     qc = QuantumCircuit(n)
     for i in range(n):
         qc.h(i)
@@ -111,7 +111,7 @@ def qft_superpos(n):
     return
 
 
-def ghz_example(n=3):
+def ghz_example(n: int = 3) -> None:
     qc = QuantumCircuit(n)
     qc.h(0)
     for i in range(n):

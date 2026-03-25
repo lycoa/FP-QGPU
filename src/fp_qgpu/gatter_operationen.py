@@ -3,7 +3,9 @@ from qiskit import QuantumCircuit
 from fp_qgpu.circuits import simple00
 
 
-def u_gate(number_of_qubits, acting_on, u, vec):
+def u_gate(
+    number_of_qubits: int, acting_on: int, u: np.ndarray, vec: np.ndarray
+) -> np.ndarray:
     num = number_of_qubits
     act_on = acting_on
     u_gate = u
@@ -16,7 +18,7 @@ def u_gate(number_of_qubits, acting_on, u, vec):
     return phi
 
 
-def cx(number_of_qubits, control, target, vec):
+def cx(number_of_qubits: int, control: int, target: int, vec: np.ndarray) -> np.ndarray:
     num = number_of_qubits
 
     control = control
@@ -40,8 +42,8 @@ def cx(number_of_qubits, control, target, vec):
     return phi
 
 
-def extract_gates(transpiled_qc):
-    gate_list = []
+def extract_gates(transpiled_qc: QuantumCircuit) -> list[str]:
+    gate_list: list[str] = []
 
     for gate in transpiled_qc.data:
         gate_list.append(gate.name)
@@ -50,8 +52,8 @@ def extract_gates(transpiled_qc):
     return gate_list
 
 
-def get_circuit(qc: QuantumCircuit) -> None:
-    circuit = []
+def get_circuit(qc: QuantumCircuit) -> list[list[object]]:
+    circuit: list[list[object]] = []
     for gate in qc.data:
         acting_on = [qc.find_bit(q).index for q in gate.qubits]
         circuit.append([gate.name, acting_on, gate.matrix])

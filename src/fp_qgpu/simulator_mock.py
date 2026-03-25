@@ -1,6 +1,7 @@
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 from qiskit import transpile
+import numpy as np
 
 
 # einfacher Test-Circuit
@@ -12,7 +13,9 @@ qc.measure_all()
 thisdict = {"qc": qc, "shots": 1024, "seed": 42}
 
 
-def simulator_mock(qc: QuantumCircuit, shots: int = 1024, seed: int | None = None):
+def simulator_mock(
+    qc: QuantumCircuit, shots: int = 1024, seed: int | None = None
+) -> tuple[dict[str, int] | None, np.ndarray]:
     simulator = AerSimulator(seed_simulator=seed)
 
     # Get statevector
