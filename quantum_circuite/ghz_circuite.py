@@ -17,7 +17,8 @@ def ghz(n):
     qc.measure_all()
     print(qc)
     transpiled_qc = transpile(qc, basis_gates=["u", "cx"])
-    print(transpiled_qc)
+    transpiled_qc.data
+    print(transpiled_qc.data)
 
     # Transpile for simulator
     simulator = AerSimulator()
@@ -99,4 +100,4 @@ def ghz_example(n=3):
     plt.show()
 
 
-ghz(3)
+ghz(2)
