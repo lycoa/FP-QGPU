@@ -4,7 +4,10 @@ from qiskit import QuantumCircuit, transpile
 from fp_qgpu.gatter_operationen import cx, u_gate
 from fp_qgpu.gatter_operationen_numba import (
     cx_numba_compatible,
+    cx_numba_compatible_three_loops,
     u_gate_numba_compatible,
+    u_gate_numba_compatible_two_loops,
+    u_gate_numba_compatible_three_loops,
 )
 
 
@@ -94,3 +97,44 @@ def test_cx_numba_compatible_matches_original_on_transpiled_random_cx_only_circu
     print(numba_result)
 
     assert np.allclose(numba_result, original_result, atol=1e-12)
+
+
+def test_cx_numba_compatible_three_loops_matches_einsum() -> None:
+    num_qubits = 5
+    state = _random_state_tensor(num_qubits, seed=7)
+
+    for control in range(num_qubits):
+        for target in range(num_qubits):
+            if control == target:
+                continue
+
+            expected = cx(num_qubits, control, target, state)
+            actual = cx_numba_compatible_three_loops(num_qubits, control, target, state)
+
+            assert np.allclose(actual, expected, atol=1e-12)
+
+
+def test_u_gate_numba_compatible_three_loops_matches_einsum() -> None:
+    num_qubits = 5
+    state = _random_state_tensor(num_qubits, seed=11)
+
+    for acting_on in range(num_qubits):
+        u = _random_unitary_2x2(seed=200 + acting_on)
+
+        expected = u_gate(num_qubits, acting_on, u, state)
+        actual = u_gate_numba_compatible_three_loops(num_qubits, acting_on, u, state)
+
+        assert np.allclose(actual, expected, atol=1e-12)
+
+
+def test_u_gate_numba_compatible_two_loops_matches_einsum() -> None:
+    num_qubits = 5
+    state = _random_state_tensor(num_qubits, seed=21)
+
+    for acting_on in range(num_qubits):
+        u = _random_unitary_2x2(seed=300 + acting_on)
+
+        expected = u_gate(num_qubits, acting_on, u, state)
+        actual = u_gate_numba_compatible_two_loops(num_qubits, acting_on, u, state)
+
+        assert np.allclose(actual, expected, atol=1e-12)
