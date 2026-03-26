@@ -11,6 +11,7 @@ def _axis_to_bit_position(number_of_qubits: int, axis_index: int) -> int:
     return number_of_qubits - 1 - axis_index
 
 
+@numba.njit(cache=True)
 def u_gate_numba_compatible(
     number_of_qubits: int, acting_on: int, u: np.ndarray, vec: np.ndarray
 ) -> np.ndarray:
@@ -54,7 +55,7 @@ def u_gate_numba_compatible(
     # Step 5: reshape back to tensor form [2] * number_of_qubits.
     return output_state.reshape([2] * number_of_qubits)
 
-
+@numba.njit(cache=True)
 def cx_numba_compatible(
     number_of_qubits: int, control: int, target: int, vec: np.ndarray
 ) -> np.ndarray:
