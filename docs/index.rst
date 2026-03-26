@@ -35,6 +35,14 @@ FP-QGPU Documentation
           <h3>API Reference</h3>
           <p>Detailed reference for every public module and function.</p>
        </a>
+       <a class="doc-card" href="notebooks/simulator_comparison.html">
+          <h3>Notebook Demo</h3>
+          <p>Visualize circuits and verify simulator parity in Jupyter format.</p>
+       </a>
+       <a class="doc-card" href="diataxis.html">
+          <h3>Diataxis Map</h3>
+          <p>Navigate tutorials, how-to guides, reference, and explanation.</p>
+       </a>
        <a class="doc-card" href="references.html">
           <h3>References</h3>
           <p>External sources and technical background links.</p>
@@ -52,13 +60,33 @@ FP-QGPU provides:
 * low-level gate utilities used by the simulator core
 
 .. toctree::
-    :maxdepth: 2
-    :hidden:
-    :caption: Documentation
+   :maxdepth: 2
+   :hidden:
+   :caption: Tutorials
 
-    installation
-    quickstart
-    tutorials
-    architecture
-    api/index
-    references
+   quickstart
+   notebooks/simulator_comparison
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: How-to Guides
+
+   installation
+   tutorials
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Reference
+
+   api/index
+   references
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Explanation
+
+   architecture
+   diataxis

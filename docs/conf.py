@@ -26,6 +26,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "myst_nb",
 ]
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
@@ -51,3 +52,5 @@ exclude_patterns = ["_build", "_autosummary", "Thumbs.db", ".DS_Store"]
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+
+nb_execution_mode = "off"
