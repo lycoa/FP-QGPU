@@ -3,7 +3,20 @@ def hello() -> str:
 
 from fp_qgpu.circuits import ghz, ghz_example, ghz_test, simple00, simple01
 from fp_qgpu.gatter_operationen import u_gate , cx
+from fp_qgpu.gatter_operationen_numba import cx_numba_compatible, u_gate_numba_compatible
 from fp_qgpu.simulator import simulator_own
 from fp_qgpu.simulator_mock import simulator_mock
 
-__all__ = ["ghz", "ghz_example", "ghz_test", "simple00" , "simple01", "u_gate", "cx", "simulator_own", "simulator_mock"]
+__all__ = [
+    "ghz",
+    "ghz_example",
+    "ghz_test",
+    "simple00",
+    "simple01",
+    "u_gate",
+    "cx",
+    "u_gate_numba_compatible",
+    "cx_numba_compatible",
+    "simulator_own",
+    "simulator_mock",
+]
