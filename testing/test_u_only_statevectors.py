@@ -1,6 +1,7 @@
 from qiskit import transpile
 from qiskit.circuit.random import random_circuit
 import numpy as np
+import pytest
 
 from fp_qgpu.gatter_operationen import get_circuit, u_gate
 from fp_qgpu.gatter_operationen_numba import u_gate_numba
@@ -77,6 +78,33 @@ def run_u_only_comparison(
     original_result = _simulate_u_only_with_original(qc_u_only)
     numba_compatible_result = _simulate_u_only_with_numba_compatible(qc_u_only)
     return original_result, numba_compatible_result
+
+
+def _assert_equivalent_up_to_global_phase(
+    reference: np.ndarray, candidate: np.ndarray, atol: float = 1e-12
+) -> None:
+    idx = int(np.argmax(np.abs(reference)))
+    phase = reference[idx] / candidate[idx]
+    assert np.allclose(reference, candidate * phase, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "num_qubits,depth,seed",
+    [
+        (2, 6, 120),
+        (4, 8, 121),
+        (6, 10, 122),
+    ],
+)
+def test_u_only_numba_matches_original(
+    num_qubits: int, depth: int, seed: int
+) -> None:
+    original_result, numba_compatible_result = run_u_only_comparison(
+        num_qubits=num_qubits,
+        depth=depth,
+        seed=seed,
+    )
+    _assert_equivalent_up_to_global_phase(original_result, numba_compatible_result)
 
 
 if __name__ == "__main__":
