@@ -1,11 +1,17 @@
 import time
+from collections.abc import Generator
+from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from fp_qgpu.simulator import simulator_own
 from qiskit import transpile
 from qiskit.circuit.random import random_circuit
 from qiskit_aer import AerSimulator
+
+
+_BENCHMARK_POINTS: list[tuple[int, float, float]] = []
 
 
 def _assert_equivalent_up_to_global_phase(
@@ -19,6 +25,36 @@ def _assert_equivalent_up_to_global_phase(
 def _run_aer_statevector(simulator: AerSimulator, circuit) -> np.ndarray:
     result = simulator.run(circuit, shots=1).result()
     return np.asarray(result.get_statevector(circuit), dtype=complex)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _plot_runtime_vs_qubits_after_benchmark() -> Generator[None, None, None]:
+    yield
+
+    if not _BENCHMARK_POINTS:
+        return
+
+    points = sorted(_BENCHMARK_POINTS, key=lambda p: p[0])
+    qubits = [p[0] for p in points]
+    own_times_us = [p[1] * 1e6 for p in points]
+    aer_times_us = [p[2] * 1e6 for p in points]
+
+    output_path = Path("testing/.benchmarks/statevector_runtime_vs_qubits.png")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(qubits, own_times_us, marker="o", linewidth=2, label="simulator_own")
+    plt.plot(qubits, aer_times_us, marker="s", linewidth=2, label="qiskit_aer")
+    plt.xlabel("Qubits")
+    plt.ylabel("Mean runtime (microseconds)")
+    plt.title("Statevector Runtime vs Qubits")
+    plt.grid(True, alpha=0.35)
+    plt.xticks(qubits)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=180)
+    plt.close()
+    print(f"[benchmark-plot] saved {output_path}")
 
 
 @pytest.mark.parametrize("num_qubits", [2, 4, 6, 8])
@@ -62,5 +98,6 @@ def test_statevector_runtime_ratio_vs_aer(benchmark, num_qubits: int):
     benchmark.extra_info["mean_own_s"] = mean_own
     benchmark.extra_info["mean_aer_s"] = mean_aer
     benchmark.extra_info["mean_ratio_own_div_aer"] = mean_ratio
+    _BENCHMARK_POINTS.append((num_qubits, mean_own, mean_aer))
     print(f"[ratio][{num_qubits}q] own/aer={mean_ratio:.4f}")
     assert mean_ratio > 0

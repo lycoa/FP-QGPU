@@ -5,3 +5,4 @@ uv.lock
 playground/
 _build/
 _autosummary/
+testing/.benchmarks/*.json
