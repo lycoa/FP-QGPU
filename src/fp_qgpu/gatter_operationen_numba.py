@@ -14,53 +14,7 @@ def _axis_to_bit_position(number_of_qubits: int, axis_index: int) -> int:
 
 
 @numba.njit(cache=True)
-def u_gate_numba_compatible(
-    number_of_qubits: int, acting_on: int, u: np.ndarray, vec: np.ndarray
-) -> np.ndarray:
-    """
-    Apply a single-qubit gate without using numpy.einsum.
-
-    This implementation is written in explicit loops and scalar operations so that it
-    is straightforward to port to/compile with Numba.
-    """
-    # Step 1: flatten the input tensor state to a 1D statevector.
-    # The original tensor shape is restored at the end.
-    input_state = np.ascontiguousarray(vec.reshape(-1))
-    state_size = input_state.size
-
-    # Step 2: prepare the output statevector with zeros.
-    output_state = np.zeros(state_size, dtype=np.complex128)
-
-    # Step 3: identify the bit position that corresponds to the chosen tensor axis.
-    bit_position = _axis_to_bit_position(number_of_qubits, acting_on)
-    bit_weight = 2**bit_position
-
-    # Step 4: iterate over all basis indices of the input state.
-    # For each index:
-    #   - read the input bit value at "acting_on"
-    #   - distribute amplitude to output bit 0 and output bit 1 via U[:, input_bit]
-    for input_index in range(state_size):
-        input_bit = (input_index // bit_weight) % 2
-        amplitude = input_state[input_index]
-
-        # Build both output indices for this basis configuration:
-        # one where target bit is 0 and one where target bit is 1.
-        # Remove the contribution of the current bit value to force the bit to 0.
-        index_with_bit_0 = input_index - input_bit * bit_weight
-        # Add the bit weight once to force the bit to 1.
-        index_with_bit_1 = index_with_bit_0 + bit_weight
-
-        # Accumulate the two contributions from the gate matrix.
-        output_state[index_with_bit_0] += u[0, input_bit] * amplitude
-        output_state[index_with_bit_1] += u[1, input_bit] * amplitude
-
-    # Step 5: reshape back to tensor form [2] * number_of_qubits.
-    # Using vec.shape keeps the dimensionality explicit and Numba-friendly.
-    return output_state.reshape(vec.shape)
-
-
-@numba.njit(cache=True)
-def u_gate_numba_compatible_two_loops(
+def u_gate_numba(
     number_of_qubits: int, acting_on: int, u: np.ndarray, vec: np.ndarray
 ) -> np.ndarray:
     """
@@ -108,102 +62,7 @@ def u_gate_numba_compatible_two_loops(
 
 
 @numba.njit(cache=True)
-def u_gate_numba_compatible_three_loops(
-    number_of_qubits: int, acting_on: int, u: np.ndarray, vec: np.ndarray
-) -> np.ndarray:
-    """
-    Apply a single-qubit gate without using numpy.einsum.
-
-    This variant traverses the state with exactly three nested loops to avoid
-    per-index bit extraction and process two-state blocks directly.
-    """
-    # Step 1: flatten input tensor state and allocate output.
-    input_state = np.ascontiguousarray(vec.reshape(-1))
-    state_size = input_state.size
-    output_state = np.zeros(state_size, dtype=np.complex128)
-
-    # Step 2: map the target tensor axis to the corresponding bit position.
-    target_bit_position = _axis_to_bit_position(number_of_qubits, acting_on)
-    target_bit_weight = 2**target_bit_position
-
-    # Step 3: precompute the three-loop traversal ranges.
-    # upper: bits above the target bit
-    # middle: fixed separator level (size 1) to keep a uniform 3-loop layout
-    # lower: bits below the target bit
-    upper_count = 2 ** (number_of_qubits - target_bit_position - 1)
-    middle_count = 1
-    lower_count = 2**target_bit_position
-
-    upper_stride = 2 ** (target_bit_position + 1)
-    middle_stride = 2**target_bit_position
-
-    # Step 4: iterate over all two-state blocks (i0, i1) where only the target
-    # bit differs, and apply the 2x2 gate matrix explicitly.
-    for upper in range(upper_count):
-        upper_base = upper * upper_stride
-        for middle in range(middle_count):
-            middle_base = upper_base + middle * middle_stride
-            for lower in range(lower_count):
-                i0 = middle_base + lower
-                i1 = i0 + target_bit_weight
-
-                amp0 = input_state[i0]
-                amp1 = input_state[i1]
-
-                output_state[i0] = u[0, 0] * amp0 + u[0, 1] * amp1
-                output_state[i1] = u[1, 0] * amp0 + u[1, 1] * amp1
-
-    # Step 5: reshape to tensor form, matching existing API behavior.
-    # Using vec.shape keeps the dimensionality explicit and Numba-friendly.
-    return output_state.reshape(vec.shape)
-
-
-@numba.njit(cache=True)
-def cx_numba_compatible(
-    number_of_qubits: int, control: int, target: int, vec: np.ndarray
-) -> np.ndarray:
-    """
-    Apply a CX gate without using numpy.einsum.
-
-    The rule is explicit:
-    - if control bit is 0: amplitude stays at same index
-    - if control bit is 1: flip target bit
-    """
-    # Step 1: flatten input tensor state and allocate output.
-    input_state = np.ascontiguousarray(vec.reshape(-1))
-    state_size = input_state.size
-    output_state = np.zeros(state_size, dtype=np.complex128)
-
-    # Step 2: map tensor axes to bit positions in flattened indexing.
-    control_bit_position = _axis_to_bit_position(number_of_qubits, control)
-    target_bit_position = _axis_to_bit_position(number_of_qubits, target)
-    control_bit_weight = 2**control_bit_position
-    target_bit_weight = 2**target_bit_position
-
-    # Step 3: walk through each input basis index and route its amplitude.
-    for input_index in range(state_size):
-        amplitude = input_state[input_index]
-        control_bit = (input_index // control_bit_weight) % 2
-        target_bit = (input_index // target_bit_weight) % 2
-
-        # If control is 1, toggle target bit. Otherwise keep index.
-        if control_bit == 1:
-            # Toggle target bit arithmetically:
-            # - if target_bit == 0, add target_bit_weight
-            # - if target_bit == 1, subtract target_bit_weight
-            output_index = input_index + (1 - 2 * target_bit) * target_bit_weight
-        else:
-            output_index = input_index
-
-        output_state[output_index] += amplitude
-
-    # Step 4: reshape to tensor form, matching existing API behavior.
-    # Using vec.shape keeps the dimensionality explicit and Numba-friendly.
-    return output_state.reshape(vec.shape)
-
-
-@numba.njit(cache=True)
-def cx_numba_compatible_three_loops(
+def cx_gate_numba(
     number_of_qubits: int, control: int, target: int, vec: np.ndarray
 ) -> np.ndarray:
     """
