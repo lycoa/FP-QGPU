@@ -1,6 +1,6 @@
 import numpy as np
 from qiskit import QuantumCircuit
-from fp_qgpu.circuits import simple00
+import numba
 
 
 def u_gate(
@@ -16,6 +16,39 @@ def u_gate(
 
     phi = np.einsum(u_gate, [51, act_on], vec, old_indices, new_indices)
     return phi
+
+
+@numba.njit(cache=True)
+def u_gate_numba(
+    number_of_qubits: int, acting_on: int, u: np.ndarray, vec: np.ndarray
+) -> np.ndarray:
+    num = number_of_qubits
+    q = num - acting_on - 1
+
+    vec_flat = vec.reshape(vec.size)
+    psi_flat = np.zeros(vec_flat.shape[0], dtype=np.complex128)
+
+    lower_size = 2**q
+    upper_size = 2 ** (num - q - 1)  # qiskit counts qubits from right to left
+
+    bit_q = 2**q
+    upper_shift = q + 1
+
+    for lower in range(lower_size):
+        idx_lower = lower
+        for upper in range(upper_size):
+            idx_upper = upper << upper_shift
+
+            idx_0 = idx_lower + idx_upper + 0 * bit_q
+            idx_1 = idx_lower + idx_upper + 1 * bit_q
+
+            v0 = vec_flat[idx_0]
+            v1 = vec_flat[idx_1]
+
+            psi_flat[idx_0] = u[0, 0] * v0 + u[0, 1] * v1
+            psi_flat[idx_1] = u[1, 0] * v0 + u[1, 1] * v1
+
+    return psi_flat.reshape(vec.shape)
 
 
 def cx(number_of_qubits: int, control: int, target: int, vec: np.ndarray) -> np.ndarray:
@@ -59,6 +92,3 @@ def get_circuit(qc: QuantumCircuit) -> list[list[object]]:
         circuit.append([gate.name, acting_on, gate.matrix])
         # print('other paramters (such as angles):', gate[0].params)
     return circuit  # containes information about each gate
-
-
-print(get_circuit(simple00()))
