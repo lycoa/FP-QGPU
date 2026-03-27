@@ -4,7 +4,7 @@ import pytest
 from fp_qgpu.gatter_operationen_numba import (
     simulate_circuit_numba_compiled,
 )
-from fp_qgpu.simulator import simulator_own
+from fp_qgpu.simulator import CUDA_IMPORT_AVAILABLE, simulator_own, simulator_own_numba
 from qiskit import transpile
 from qiskit.circuit.random import random_circuit
 from qiskit_aer import AerSimulator
@@ -14,8 +14,18 @@ def _assert_equivalent_up_to_global_phase(
     reference: np.ndarray, candidate: np.ndarray, atol: float = 1e-12
 ) -> None:
     idx = int(np.argmax(np.abs(reference)))
+    if np.abs(candidate[idx]) < 1e-16:
+        idx = int(np.argmax(np.abs(candidate)))
     phase = reference[idx] / candidate[idx]
     assert np.allclose(reference, candidate * phase, atol=atol)
+
+
+def _cuda_is_available() -> bool:
+    if not CUDA_IMPORT_AVAILABLE:
+        return False
+    from numba import cuda
+
+    return cuda.is_available()
 
 
 def _run_aer_statevector(simulator: AerSimulator, circuit) -> np.ndarray:
@@ -92,6 +102,9 @@ def _run_variant_statevector(variant_name: str, qc_trans):
         compiled_workload = _compile_numba_workload(qc_trans)
         return _run_numba_compiled_statevector(qc_trans.num_qubits, compiled_workload)
 
+    if variant_name == "numba_cuda":
+        return simulator_own_numba(qc_trans, use_cuda=True)
+
     raise ValueError(f"Unknown variant '{variant_name}'.")
 
 
@@ -115,11 +128,15 @@ def _collect_call_times(
     [
         "simulator_own",
         "numba_compiled",
+        "numba_cuda",
     ],
 )
 def test_statevector_runtime_ratio_vs_aer(
     benchmark, num_qubits: int, variant_name: str
 ):
+    if variant_name == "numba_cuda" and not _cuda_is_available():
+        pytest.skip("CUDA benchmark requested, but CUDA is unavailable on this machine.")
+
     depth = max(8, num_qubits * 3)
     qc = random_circuit(num_qubits, depth, measure=False, seed=200 + num_qubits)
     qc_trans = transpile(qc, basis_gates=["u", "cx"], optimization_level=0)
@@ -134,6 +151,8 @@ def test_statevector_runtime_ratio_vs_aer(
     # Trigger JIT compilation before timing to avoid first-run bias.
     _run_numba_compiled_statevector(num_qubits, compiled_workload)
     _run_aer_statevector(simulator, qc_aer)
+    if variant_name == "numba_cuda":
+        simulator_own_numba(qc_trans, use_cuda=True)
 
     if variant_name == "numba_compiled":
         state_own = _run_numba_compiled_statevector(num_qubits, compiled_workload)
@@ -147,6 +166,11 @@ def test_statevector_runtime_ratio_vs_aer(
 
         def run_variant() -> np.ndarray:
             return _run_numba_compiled_statevector(num_qubits, compiled_workload)
+
+    elif variant_name == "numba_cuda":
+
+        def run_variant() -> np.ndarray:
+            return simulator_own_numba(qc_trans, use_cuda=True)
 
     else:
 

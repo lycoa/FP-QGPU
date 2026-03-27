@@ -7,12 +7,14 @@ simulator variants against Qiskit Aer for final statevector computation.
 Compared Implementations
 ------------------------
 
-The benchmark compares three implementations:
+The benchmark compares up to four implementations:
 
 * ``simulator_own``: baseline implementation using ``u_gate`` and ``cx`` from
    ``fp_qgpu.gatter_operationen``.
 * ``numba_compiled``: Numba-compiled full-circuit path using
    ``simulate_circuit_numba_compiled`` from ``fp_qgpu.gatter_operationen_numba``.
+* ``numba_cuda``: CUDA-backed path via ``simulator_own_numba(..., use_cuda=True)``
+   from ``fp_qgpu.simulator`` (only when CUDA is available).
 * ``qiskit_aer``: Aer statevector simulator reference backend.
 
 The Numba ``cx_gate_numba`` implementation uses structured three-loop block
@@ -33,7 +35,7 @@ For each case:
 * A random circuit is generated with ``seed=1234 + num_qubits``.
 * Aer is configured with ``method='statevector'``, ``fusion_enable=False``, and
    ``max_parallel_threads=1``.
-* Warmup runs are executed before measurement for all three implementations.
+* Warmup runs are executed before measurement for all active implementations.
 * Repeats are ``7`` up to 15 qubits and ``3`` for 17 and 19 qubits.
 
 Run the Benchmark
