@@ -4,6 +4,11 @@ import numpy as np
 from numba import cuda
 
 
+def _axis_to_bit_position(number_of_qubits: int, axis_index: int) -> int:
+    """Convert tensor-axis index to flat-index bit position."""
+    return number_of_qubits - 1 - axis_index
+
+
 @cuda.jit
 def app_u_kernel(
     number_of_qubits: int,
@@ -19,6 +24,7 @@ def app_u_kernel(
     """
     pair_index = cuda.grid(1)
     total_pairs = input_state.size // 2
+    _ = number_of_qubits  # Kept for API consistency with other backends.
 
     if pair_index >= total_pairs:
         return
@@ -72,12 +78,13 @@ def app_cx_kernel(
 
 def u_gate_cuda(
     number_of_qubits: int,
-    bit_position: int,
+    acting_on: int,
     u: np.ndarray,
     vec: np.ndarray,
     threads_per_block: int = 256,
 ) -> np.ndarray:
     """Host helper to launch ``app_u_kernel`` and return the updated state."""
+    bit_position = _axis_to_bit_position(number_of_qubits, acting_on)
     input_state = np.ascontiguousarray(vec.reshape(-1), dtype=np.complex128)
     output_state = np.empty_like(input_state)
     u_local = np.ascontiguousarray(u, dtype=np.complex128)
@@ -102,13 +109,14 @@ def u_gate_cuda(
 
 def cx_gate_cuda(
     number_of_qubits: int,
-    control_bit_position: int,
-    target_bit_position: int,
+    control: int,
+    target: int,
     vec: np.ndarray,
     threads_per_block: int = 256,
 ) -> np.ndarray:
     """Host helper to launch ``app_cx_kernel`` and return the updated state."""
-    _ = number_of_qubits  # Kept for API compatibility with other backends.
+    control_bit_position = _axis_to_bit_position(number_of_qubits, control)
+    target_bit_position = _axis_to_bit_position(number_of_qubits, target)
     state = np.ascontiguousarray(vec.reshape(-1), dtype=np.complex128)
     d_state = cuda.to_device(state)
 
