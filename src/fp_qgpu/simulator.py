@@ -6,7 +6,11 @@ import numpy as np
 from typing import Callable
 
 try:
-    from fp_qgpu.gatter_operationen_cuda import u_gate_cuda, cx_gate_cuda
+    from fp_qgpu.gatter_operationen_cuda import (
+        cx_gate_cuda,
+        simulate_circuit_cuda,
+        u_gate_cuda,
+    )
     from numba import cuda
 
     CUDA_IMPORT_AVAILABLE = True
@@ -97,4 +101,6 @@ def simulator_own_numba(
     if not cuda.is_available():
         raise RuntimeError("CUDA path requested, but no CUDA-capable GPU is available.")
 
-    return _simulate_circuit_with_ops(transpiled_circuite, u_gate_cuda, cx_gate_cuda)
+    num = transpiled_circuite.num_qubits
+    circuit = get_circuit(transpiled_circuite)
+    return simulate_circuit_cuda(num, circuit)
